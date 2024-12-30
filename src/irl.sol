@@ -19,21 +19,17 @@ contract irl is ERC1155, Ownable {
         startTimestamp = block.timestamp;
     }
 
-    function mint(
-        address to,
-        uint256 id,
-        uint256 price,
-        bytes memory signature
-    ) external payable {
+    function mint(address to, uint256 id, uint256 price, bytes memory signature) external payable {
         if (msg.value < price) revert InsufficientFunds();
 
         bytes32 _hash = getHash(to, id, price);
 
-        if (!SignatureChecker.isValidSignatureNow(owner(), _hash, signature))
+        if (!SignatureChecker.isValidSignatureNow(owner(), _hash, signature)) {
             revert InvalidSignature();
+        }
 
         if (msg.value > price) {
-            (bool success, ) = msg.sender.call{value: msg.value - price}("");
+            (bool success,) = msg.sender.call{value: msg.value - price}("");
             if (!success) revert RefundFailed();
         }
 
@@ -42,13 +38,7 @@ contract irl is ERC1155, Ownable {
         _mint(to, id, 1, "");
     }
 
-    function safeTransferFrom(
-        address from,
-        address to,
-        uint256 id,
-        uint256 value,
-        bytes memory data
-    ) public override {
+    function safeTransferFrom(address from, address to, uint256 id, uint256 value, bytes memory data) public override {
         revert TransfersDisabled();
     }
 
@@ -63,7 +53,7 @@ contract irl is ERC1155, Ownable {
     }
 
     function withdraw(address to) external onlyOwner {
-        (bool success, ) = payable(to).call{value: address(this).balance}("");
+        (bool success,) = payable(to).call{value: address(this).balance}("");
         if (!success) revert WithdrawFailed();
     }
 
@@ -77,11 +67,7 @@ contract irl is ERC1155, Ownable {
         }
     }
 
-    function getHash(
-        address to,
-        uint256 id,
-        uint256 price
-    ) public view returns (bytes32) {
+    function getHash(address to, uint256 id, uint256 price) public view returns (bytes32) {
         return keccak256(abi.encode("mint", to, id, price, address(this)));
     }
 }
